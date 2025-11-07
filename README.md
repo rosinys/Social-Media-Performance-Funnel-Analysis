@@ -1,10 +1,8 @@
 # Social-Media-Performance-Funnel-Analysis
-Analyzing platform performance and audience behavior across Facebook and Instagram to optimize marketing strategy.
 
 🚀 Social Media Ad Performance Analysis
 
-This project focuses on analyzing and improving advertising performance across Facebook and Instagram.
-It explores how different platforms, audiences, and ad types influence engagement, conversions, and overall marketing efficiency.
+This project focuses on analyzing and improving advertising performance across Facebook and Instagram. It explores how different platforms, audiences, and ad types influence engagement, conversions, and overall marketing efficiency.
 
 📂 Project Overview
 
