@@ -16,9 +16,9 @@ Visualization & Insights: Power BI for interactive dashboards, DAX-based KPIs, a
 
 
 🔍 Key Findings
-🌙 33% higher purchase likelihood among users active at night, guiding smarter audience targeting.
-💰 Facebook ads deliver 87% higher ROI and $1,700 lower cost per purchase than Instagram despite similar conversion rates.
-📱 Facebook Stories emerged as the top-converting ad medium, driving stronger engagement and efficiency.
-🧾 Identified $150,000+ in unused campaign budgets, uncovering opportunities to reallocate resources effectively.
-💡 Technology-related ads achieved the highest conversion rates across platforms.
+- 🌙 33% higher purchase likelihood among users active at night, guiding smarter audience targeting.
+- 💰 Facebook ads deliver 87% higher ROI and $1,700 lower cost per purchase than Instagram despite similar conversion rates.
+- 📱 Facebook Stories emerged as the top-converting ad medium, driving stronger engagement and efficiency.
+- 🧾 Identified $150,000+ in unused campaign budgets, uncovering opportunities to reallocate resources effectively.
+- 💡 Technology-related ads achieved the highest conversion rates across platforms.
 
