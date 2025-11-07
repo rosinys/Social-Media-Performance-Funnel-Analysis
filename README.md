@@ -6,8 +6,7 @@ This project focuses on analyzing and improving advertising performance across F
 
 📂 Project Overview
 
-Analyzed four core datasets containing detailed information on users, campaigns, ads, and over 400,000+ user interactions.
-The goal was to identify which combinations of audience segments, ad types, and platforms deliver the strongest results — and uncover opportunities to optimize marketing strategy and ROI.
+Analyzed four core datasets containing detailed information on users, campaigns, ads, and over 400,000+ user interactions. The goal was to identify which combinations of audience segments, ad types, and platforms deliver the strongest results, and uncover opportunities to optimize marketing strategy and ROI.
 
 🧰 Tools & Technologies
 
