@@ -1,0 +1,195 @@
+social-media-ads-sql-project/
+│
+├── README.md
+└── queries/
+    ├── 01_campaign_efficiency.sql
+    ├── 02_platform_time_metrics.sql
+    ├── 03_platform_impression_ranking.sql
+    ├── 04_age_group_performance.sql
+    ├── 05_campaign_budget_summary.sql
+    ├── 06_unused_funding.sql
+    ├── 07_impressions_by_time.sql
+    └── 08_purchases_by_day.sql
+
+-- =====================================================
+-- 📊 Script: 01_campaign_efficiency.sql
+-- Purpose: Calculate campaign-level efficiency metrics.
+-- Details: Aggregates ad events to the campaign level and computes
+--          CTR, conversion rate, and cost efficiency metrics.
+-- Key Steps:
+-- 1️⃣ Join `ad_events` -> `ads` -> `campaigns`.
+-- 2️⃣ Aggregate impressions, clicks, and purchases per campaign.
+-- 3️⃣ Calculate performance metrics:
+--     - CTR = Clicks / Impressions
+--     - Conversion Rate = Purchases / Clicks
+--     - Clicks per dollar = Clicks / Total Budget
+--     - Purchases per dollar = Purchases / Total Budget
+-- 4️⃣ Order campaigns by clicks_per_dollar descending.
+-- =====================================================
+
+CREATE OR REPLACE TABLE `social_media.campaign_efficiency` AS
+SELECT
+  c.campaign_id,
+  c.name AS campaign_name,
+  c.total_budget,
+  COUNTIF(e.event_type = 'Impression') AS impressions,
+  COUNTIF(e.event_type = 'Click') AS clicks,
+  COUNTIF(e.event_type = 'Purchase') AS purchases,
+  ROUND(SAFE_DIVIDE(COUNTIF(e.event_type = 'Click'), COUNTIF(e.event_type = 'Impression')),4) AS ctr,
+  ROUND(SAFE_DIVIDE(COUNTIF(e.event_type = 'Purchase'), COUNTIF(e.event_type = 'Click')),4) AS conversion_rate,
+  ROUND(SAFE_DIVIDE(COUNTIF(e.event_type = 'Click'), c.total_budget),4) AS clicks_per_dollar,
+  ROUND(SAFE_DIVIDE(COUNTIF(e.event_type = 'Purchase'), c.total_budget),4) AS purchases_per_dollar
+FROM `social_media.ad_events` e
+JOIN `social_media.ads` a
+  ON e.ad_id = a.ad_id
+JOIN `social_media.campaigns` c
+  ON a.campaign_id = c.campaign_id
+GROUP BY c.campaign_id, c.name, c.total_budget
+ORDER BY clicks_per_dollar DESC;
+
+-- =====================================================
+-- ⏱️ Script: 02_platform_time_metrics.sql
+-- Purpose: Calculate platform and time-of-day performance metrics.
+-- Details: Computes impressions, clicks, and CTR per platform/time_of_day.
+-- Key Steps:
+-- 1️⃣ Join `ad_events` and `ads`.
+-- 2️⃣ Aggregate impressions and clicks.
+-- 3️⃣ Compute CTR = Clicks / Impressions.
+-- 4️⃣ Order by CTR descending for insight on optimal times.
+-- =====================================================
+
+SELECT
+  a.ad_platform,
+  e.time_of_day,
+  COUNTIF(e.event_type = 'Impression') AS impressions,
+  COUNTIF(e.event_type = 'Click') AS clicks,
+  SAFE_DIVIDE(COUNTIF(e.event_type = 'Click'), COUNTIF(e.event_type = 'Impression')) AS ctr
+FROM `social_media.ad_events` e
+JOIN `social_media.ads` a
+  ON e.ad_id = a.ad_id
+GROUP BY a.ad_platform, e.time_of_day
+ORDER BY ctr DESC;
+
+-- =====================================================
+-- 📊 Script: 03_platform_impression_ranking.sql
+-- Purpose: Rank time-of-day impressions within each platform.
+-- Details: Determines the peak time periods for impressions.
+-- Key Steps:
+-- 1️⃣ Join `ad_events` and `ads`.
+-- 2️⃣ Count impressions by platform and time_of_day.
+-- 3️⃣ Rank impressions per platform using RANK().
+-- 4️⃣ Order results by platform and total impressions descending.
+-- =====================================================
+
+SELECT
+  a.ad_platform,
+  e.time_of_day,
+  COUNTIF(e.event_type = 'Impression') AS total_impressions,
+  RANK() OVER (PARTITION BY a.ad_platform ORDER BY COUNTIF(e.event_type = 'Impression') DESC) AS rank_within_platform
+FROM `social_media.ad_events` e
+JOIN `social_media.ads` a
+  ON e.ad_id = a.ad_id
+GROUP BY a.ad_platform, e.time_of_day
+ORDER BY a.ad_platform, total_impressions DESC;
+
+-- =====================================================
+-- 👥 Script: 04_age_group_performance.sql
+-- Purpose: Analyze ad performance by user age group and platform.
+-- Details: Computes impressions, clicks, purchases, CTR, and conversion rate.
+-- Key Steps:
+-- 1️⃣ Join `ad_events`, `ads`, and `users`.
+-- 2️⃣ Group by age_group and ad_platform.
+-- 3️⃣ Aggregate event counts.
+-- 4️⃣ Compute performance metrics.
+-- 5️⃣ Order results by age_group and CTR descending.
+-- =====================================================
+
+SELECT
+  u.age_group,
+  a.ad_platform,
+  COUNTIF(e.event_type = 'Impression') AS impressions,
+  COUNTIF(e.event_type = 'Click') AS clicks,
+  COUNTIF(e.event_type = 'Purchase') AS purchases,
+  SAFE_DIVIDE(COUNTIF(e.event_type = 'Click'), COUNTIF(e.event_type = 'Impression')) AS ctr,
+  SAFE_DIVIDE(COUNTIF(e.event_type = 'Purchase'), COUNTIF(e.event_type = 'Click')) AS conversion_rate
+FROM `social_media.ad_events` e
+JOIN `social_media.ads` a
+  ON e.ad_id = a.ad_id
+JOIN `social_media.users` u
+  ON e.user_id = u.user_id
+GROUP BY u.age_group, a.ad_platform
+ORDER BY u.age_group, ctr DESC;
+
+-- =====================================================
+-- 💰 Script: 05_campaign_budget_summary.sql
+-- Purpose: Summarize campaign budgets and average ad spending.
+-- Details: Counts number of ads per campaign and calculates average ad budget.
+-- Key Steps:
+-- 1️⃣ LEFT JOIN `campaigns` and `ads`.
+-- 2️⃣ Count distinct ads per campaign.
+-- 3️⃣ Calculate average budget per ad = total_budget / ads_released.
+-- 4️⃣ Order by campaign_id.
+-- =====================================================
+
+SELECT
+  c.campaign_id,
+  c.name,
+  c.total_budget,
+  COUNT(DISTINCT a.ad_id) AS ads_released,
+  ROUND(SAFE_DIVIDE(c.total_budget, COUNT(DISTINCT a.ad_id)),2) AS average_ad_budget
+FROM `social_media.campaigns` c
+LEFT JOIN `social_media.ads` a
+  ON c.campaign_id = a.campaign_id
+GROUP BY c.campaign_id, c.name, c.total_budget
+ORDER BY c.campaign_id;
+
+-- =====================================================
+-- 🚫 Script: 06_unused_Funding.sql
+-- Purpose: Identify campaigns with no ads released.
+-- Details: Highlights budget allocation for campaigns that were never used.
+-- Key Steps:
+-- 1️⃣ LEFT JOIN `campaigns` and `ads`.
+-- 2️⃣ Count distinct ads per campaign.
+-- 3️⃣ Filter campaigns with 0 ads released using HAVING clause.
+-- =====================================================
+
+SELECT
+  c.campaign_id,
+  c.name,
+  c.total_budget,
+  COUNT(DISTINCT a.ad_id) AS ads_released,
+  ROUND(SAFE_DIVIDE(c.total_budget, COUNT(DISTINCT a.ad_id)),2) AS average_ad_budget
+FROM `social_media.campaigns` c
+LEFT JOIN `social_media.ads` a
+  ON c.campaign_id = a.campaign_id
+GROUP BY c.campaign_id, c.name, c.total_budget
+HAVING ads_released = 0
+ORDER BY c.campaign_id;
+
+-- =====================================================
+-- ⏱️ Script: 07_impressions_by_time.sql
+-- Purpose: Rank time-of-day periods by total impressions.
+-- Details: Helps identify peak impression periods for ad scheduling.
+-- =====================================================
+
+SELECT
+  time_of_day,
+  COUNTIF(event_type = 'Impression') AS total_impressions,
+  RANK() OVER (ORDER BY COUNTIF(event_type = 'Impression') DESC) AS rank_by_impressions
+FROM `social_media.ad_events`
+GROUP BY time_of_day
+ORDER BY total_impressions DESC;
+
+-- =====================================================
+-- 📅 Script: 08_purchases_by_day.sql
+-- Purpose: Rank days of the week by total purchases.
+-- Details: Identifies which days drive the most revenue from ad campaigns.
+-- =====================================================
+
+SELECT
+  day_of_week,
+  COUNTIF(event_type = 'Purchase') AS total_purchases,
+  RANK() OVER (ORDER BY COUNTIF(event_type = 'Purchase') DESC) AS rank_by_purchases
+FROM `social_media.ad_events`
+GROUP BY day_of_week
+ORDER BY total_purchases DESC;
